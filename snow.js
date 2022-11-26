@@ -21,7 +21,8 @@ var getVY = function(){
     return ((Math.random() * 75) + 15);
 };
 
-var addParticles = function(){
+var addParticles = function(overallElapsed){
+    var color = overallElapsed > 50000 ? d3.interpolateRainbow(Math.random()) : "white";
     for(var i=0; i<numParticles; i++){
         particles.push({
             x: Math.floor(Math.random() * width),
@@ -29,13 +30,13 @@ var addParticles = function(){
             r: (Math.random() * 3) + .5,
             key: counter++,
             vx: getVX(),
-            vy: getVY()
+            vy: getVY(),
+            color: color
         });
     }
 }
 
 var particles = [];
-addParticles();
 
 var svg = d3.select("body").append("svg")
     .attr("height", height)
@@ -56,12 +57,12 @@ var redraw = function(elapsed, overallElapsed){
     var particle = svg.selectAll("circle.particle").data(particles, function(d) { return d.key; } );
 
     console.log(overallElapsed)
-    var color = overallElapsed > 50000 ? d3.interpolateRainbow(Math.random()) : "white";
+    
     // Update
     particle
         .attr("cx", function(d) { return d.x; } )
         .attr("cy", function(d) { return d.y; } )
-        .attr("fill", function(d) {return color});
+        .attr("fill", function(d) {return d.color});
 
     // Enter
     particle.enter().append("circle")
@@ -94,20 +95,15 @@ var update = function(elapsed, overallElapsed){
     }
 };
 
-let item = 1
-
 var doEpoch = function(){
     var dtg = new Date();
     var elapsed = dtg.getTime() - epochActual;
     let overallElapsed = dtg.getTime() - animationStartTime;
 
-    if (item == 50 && particles.length < 2000) {
-        addParticles();
-        item = 0;
+    if (overallElapsed % 50 == 0 && particles.length < 2000) {
+        addParticles(overallElapsed);
     }
 
-    item++;
-    
     update(elapsed, overallElapsed);
     redraw(elapsed, overallElapsed);
 
