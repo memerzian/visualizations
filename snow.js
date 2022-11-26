@@ -6,7 +6,7 @@ var w = window,
     height = w.innerHeight|| e.clientHeight|| g.clientHeight;
 
 // Basic control variables
-var numParticles = 1;
+var numParticles = 3;
 var epochTarget = 15;
 var epochActual = 0;
 var counter = 0;
@@ -21,21 +21,21 @@ var getVY = function(){
     return ((Math.random() * 75) + 15);
 };
 
-var addParticle = function(){
-    particles.push({
-        x: Math.floor(Math.random() * width),
-        y: 0,
-        r: (Math.random() * 3) + .5,
-        key: counter++,
-        vx: getVX(),
-        vy: getVY()
-    });
+var addParticles = function(){
+    for(var i=0; i<numParticles; i++){
+        particles.push({
+            x: Math.floor(Math.random() * width),
+            y: 0,
+            r: (Math.random() * 3) + .5,
+            key: counter++,
+            vx: getVX(),
+            vy: getVY()
+        });
+    }
 }
 
 var particles = [];
-for(var i=0; i<numParticles; i++){
-    addParticle();
-}
+addParticles();
 
 var svg = d3.select("body").append("svg")
     .attr("height", height)
@@ -43,7 +43,7 @@ var svg = d3.select("body").append("svg")
     .append("g");
 
 let text = svg.append('text')
-    .text('Happy Birthday Cee Cee!')
+    .text('Happy Birthday Mom!')
     .attr("font-size", 100)
     .style("font-family", "Tangerine")
     .attr("dx", width/2 - 300)
@@ -51,14 +51,17 @@ let text = svg.append('text')
     .style('fill', 'white')
     .attr('font-weight', 500)
 
-var redraw = function(elapsed){
+var redraw = function(elapsed, overallElapsed){
     // Bind the data to the particles
     var particle = svg.selectAll("circle.particle").data(particles, function(d) { return d.key; } );
 
+    console.log(overallElapsed)
+    var color = overallElapsed > 50000 ? d3.interpolateRainbow(Math.random()) : "white";
     // Update
     particle
         .attr("cx", function(d) { return d.x; } )
-        .attr("cy", function(d) { return d.y; } );
+        .attr("cy", function(d) { return d.y; } )
+        .attr("fill", function(d) {return color});
 
     // Enter
     particle.enter().append("circle")
@@ -70,9 +73,7 @@ var redraw = function(elapsed){
     particle.exit().remove();
 };
 
-/*
-*/
-var update = function(elapsed){
+var update = function(elapsed, overallElapsed){
     for(var j=0; j<particles.length; j++){
         var particle = particles[j];
         
@@ -98,16 +99,17 @@ let item = 1
 var doEpoch = function(){
     var dtg = new Date();
     var elapsed = dtg.getTime() - epochActual;
+    let overallElapsed = dtg.getTime() - animationStartTime;
 
-    if (item == 100 && particles.length < 2000) {
-        addParticle();
+    if (item == 50 && particles.length < 2000) {
+        addParticles();
         item = 0;
     }
 
     item++;
     
-    update(elapsed);
-    redraw(elapsed);
+    update(elapsed, overallElapsed);
+    redraw(elapsed, overallElapsed);
 
     epochActual = dtg.getTime();
     window.setTimeout(doEpoch, epochTarget);
@@ -115,9 +117,10 @@ var doEpoch = function(){
 
 var dtg = new Date();
 epochActual = dtg.getTime();
+animationStartTime = dtg.getTime();
 doEpoch();
 text.transition()
-    .duration(50000)
+    .duration(100000)
     .style("fill", "#01011d")
     .remove();
 
