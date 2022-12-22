@@ -44,10 +44,10 @@ var svg = d3.select("body").append("svg")
     .append("g");
 
 let text = svg.append('text')
-    .text('Happy Birthday Mom!')
+    .text('Happy Holidays First Resonance!')
     .attr("font-size", 100)
     .style("font-family", "Tangerine")
-    .attr("dx", width/2 - 300)
+    .attr("dx", width/2 - 500)
     .attr("dy", height/2)
     .style('fill', 'white')
     .attr('font-weight', 500)
