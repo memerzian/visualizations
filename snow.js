@@ -36,7 +36,8 @@ var updateTextPosition = function() {
     
     // Position main text
     text.attr("font-size", mainFontSize)
-        .attr("dx", width/2 - (mainFontSize * 5))
+        .attr("text-anchor", "middle")
+        .attr("dx", width/2)
         .attr("dy", height/2);
     
     // Position "What is in the box?" text
@@ -46,7 +47,7 @@ var updateTextPosition = function() {
         .attr("dx", width/2)
         .attr("dy", height/2 + mainFontSize/2 + boxFontSize);
     
-    // Position cookie texts (adjusted to start after the box text)
+    // Position cookie texts
     textGroup.selectAll(".cookie-text")
         .attr("font-size", cookieFontSize)
         .attr("text-anchor", "middle")
@@ -123,7 +124,8 @@ let text = textGroup.append('text')
     .text(message)
     .style("font-family", "Tangerine")
     .style('fill', 'white')
-    .attr('font-weight', 500);
+    .attr('font-weight', 500)
+    .attr("text-anchor", "middle");
 
 // After the main holiday message text and before the cookie names
 textGroup.append('text')
