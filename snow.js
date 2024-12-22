@@ -42,76 +42,43 @@ var updateTextPosition = function() {
     let boxFontSize = mainFontSize * (isMobile ? 0.5 : 0.4);
     let cookieFontSize = mainFontSize * (isMobile ? 0.4 : 0.3);
     
-    // Create a temporary text element to measure text width
-    let tempText = svg.append('text')
-        .text(message)
-        .attr("font-size", mainFontSize)
-        .style("font-family", "Tangerine")
-        .style("opacity", 0);
+    // Split message into two lines
+    let firstLine = "Happy Holidays";
+    let secondLine = name ? name + "!" : "!";
     
-    let textWidth = tempText.node().getComputedTextLength();
-    tempText.remove();
+    // Position text in the vertical center
+    text.text('') // Clear existing text
+        .attr("y", height/2) // Set base y position to vertical center
+        .attr("text-anchor", "middle") // Center the text
+        .attr("x", width/2) // Center horizontally
+        .selectAll('tspan')
+        .data([firstLine, secondLine])
+        .enter()
+        .append('tspan')
+        .text(d => d)
+        .attr('x', width/2) // Center each line
+        .attr('text-anchor', 'middle')
+        .attr('dy', (d, i) => i === 0 ? -mainFontSize *1.2 : mainFontSize *1.2);
     
-    // Split text if it takes up more than 80% of screen width
-    if (textWidth > width * 0.8) {
-        let parts = message.split(' ');
-        let firstLine = [];
-        let secondLine = [];
-        let currentLine = firstLine;
-        
-        // Distribute words between lines
-        parts.forEach(word => {
-            tempText = svg.append('text')
-                .text((currentLine.join(' ') + ' ' + word).trim())
-                .attr("font-size", mainFontSize)
-                .style("font-family", "Tangerine")
-                .style("opacity", 0);
-            
-            let newWidth = tempText.node().getComputedTextLength();
-            tempText.remove();
-            
-            if (currentLine === firstLine && newWidth > width * 0.4) {
-                currentLine = secondLine;
-            }
-            currentLine.push(word);
-        });
-        
-        // Position text in the vertical center
-        text.text('') // Clear existing text
-            .attr("dy", height/2 - mainFontSize * 0.6) // Move up by half the line height
-            .selectAll('tspan')
-            .data([firstLine.join(' '), secondLine.join(' ')])
-            .enter()
-            .append('tspan')
-            .text(d => d)
-            .attr('x', width/2)
-            .attr('dy', (d, i) => i === 0 ? 0 : mainFontSize * 1.2);
-    } else {
-        text.text(message) // Single line
-            .attr("dy", height/2);
-    }
+    // Position main text
+    text.attr("font-size", mainFontSize);
     
-    // Position main text (remove dy setting since we handle it above)
-    text.attr("font-size", mainFontSize)
-        .attr("text-anchor", "middle")
-        .attr("dx", width/2);
-    
-    // Calculate actual text height based on whether text is split
-    let textHeight = textWidth > width * 0.8 ? mainFontSize * 2 : mainFontSize;
+    // Calculate text height for cookie positioning
+    let textHeight = mainFontSize * 2;
     
     // Position box and cookie text
     if (showCookies) {
         textGroup.select(".box-text")
             .attr("font-size", boxFontSize)
             .attr("text-anchor", "middle")
-            .attr("dx", width/2)
-            .attr("dy", height/2 + textHeight/2 + boxFontSize);
+            .attr("x", width/2)
+            .attr("y", height/2 + textHeight/2 + boxFontSize);
         
         textGroup.selectAll(".cookie-text")
             .attr("font-size", cookieFontSize)
             .attr("text-anchor", "middle")
-            .attr("dx", width/2)
-            .attr("dy", (d, i) => height/2 + textHeight/2 + boxFontSize * 1.5 + (i + 1) * cookieFontSize);
+            .attr("x", width/2)
+            .attr("y", (d, i) => height/2 + textHeight/2 + boxFontSize * 1.5 + (i + 1) * cookieFontSize);
     }
 };
 
@@ -223,7 +190,7 @@ if (showCookies) {
             .delay((d, i) => i * 500)
             .duration(2000)
             .style("opacity", 1);
-    }, 10000);
+    }, 5000);
 }
 
 // Initial text positioning
