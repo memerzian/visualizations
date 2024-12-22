@@ -20,39 +20,99 @@ window.addEventListener('resize', function() {
 });
 
 // Add this function to get URL parameters
-var getUrlParameter = function(name) {
+var getUrlParameter = function(name, defaultValue = '') {
     name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
     var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
     var results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    if (results === null) return defaultValue;
+    let value = decodeURIComponent(results[1].replace(/\+/g, ' '));
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+    return value;
 };
 
 // Add this function to handle text positioning
 var updateTextPosition = function() {
-    // Calculate font sizes based on screen width
-    let mainFontSize = Math.min(width * 0.1, 100); // 10% of width, max 100px
-    let boxFontSize = mainFontSize * 0.4; // Box text 40% size of main text
-    let cookieFontSize = mainFontSize * 0.3; // Cookie text 30% size of main text
+    // Calculate font sizes based on screen width with smaller sizes for mobile
+    let isMobile = width < 768;
+    let mainFontSize = isMobile ? 
+        Math.min(width * 0.08, 40) : 
+        Math.min(width * 0.1, 100);
     
-    // Position main text
+    let boxFontSize = mainFontSize * (isMobile ? 0.5 : 0.4);
+    let cookieFontSize = mainFontSize * (isMobile ? 0.4 : 0.3);
+    
+    // Create a temporary text element to measure text width
+    let tempText = svg.append('text')
+        .text(message)
+        .attr("font-size", mainFontSize)
+        .style("font-family", "Tangerine")
+        .style("opacity", 0);
+    
+    let textWidth = tempText.node().getComputedTextLength();
+    tempText.remove();
+    
+    // Split text if it takes up more than 80% of screen width
+    if (textWidth > width * 0.8) {
+        let parts = message.split(' ');
+        let firstLine = [];
+        let secondLine = [];
+        let currentLine = firstLine;
+        
+        // Distribute words between lines
+        parts.forEach(word => {
+            tempText = svg.append('text')
+                .text((currentLine.join(' ') + ' ' + word).trim())
+                .attr("font-size", mainFontSize)
+                .style("font-family", "Tangerine")
+                .style("opacity", 0);
+            
+            let newWidth = tempText.node().getComputedTextLength();
+            tempText.remove();
+            
+            if (currentLine === firstLine && newWidth > width * 0.4) {
+                currentLine = secondLine;
+            }
+            currentLine.push(word);
+        });
+        
+        // Position text in the vertical center
+        text.text('') // Clear existing text
+            .attr("dy", height/2 - mainFontSize * 0.6) // Move up by half the line height
+            .selectAll('tspan')
+            .data([firstLine.join(' '), secondLine.join(' ')])
+            .enter()
+            .append('tspan')
+            .text(d => d)
+            .attr('x', width/2)
+            .attr('dy', (d, i) => i === 0 ? 0 : mainFontSize * 1.2);
+    } else {
+        text.text(message) // Single line
+            .attr("dy", height/2);
+    }
+    
+    // Position main text (remove dy setting since we handle it above)
     text.attr("font-size", mainFontSize)
         .attr("text-anchor", "middle")
-        .attr("dx", width/2)
-        .attr("dy", height/2);
+        .attr("dx", width/2);
     
-    // Position "What is in the box?" text
-    textGroup.select(".box-text")
-        .attr("font-size", boxFontSize)
-        .attr("text-anchor", "middle")
-        .attr("dx", width/2)
-        .attr("dy", height/2 + mainFontSize/2 + boxFontSize);
+    // Calculate actual text height based on whether text is split
+    let textHeight = textWidth > width * 0.8 ? mainFontSize * 2 : mainFontSize;
     
-    // Position cookie texts
-    textGroup.selectAll(".cookie-text")
-        .attr("font-size", cookieFontSize)
-        .attr("text-anchor", "middle")
-        .attr("dx", width/2)
-        .attr("dy", (d, i) => height/2 + mainFontSize/2 + boxFontSize * 1.5 + (i + 1) * cookieFontSize);
+    // Position box and cookie text
+    if (showCookies) {
+        textGroup.select(".box-text")
+            .attr("font-size", boxFontSize)
+            .attr("text-anchor", "middle")
+            .attr("dx", width/2)
+            .attr("dy", height/2 + textHeight/2 + boxFontSize);
+        
+        textGroup.selectAll(".cookie-text")
+            .attr("font-size", cookieFontSize)
+            .attr("text-anchor", "middle")
+            .attr("dx", width/2)
+            .attr("dy", (d, i) => height/2 + textHeight/2 + boxFontSize * 1.5 + (i + 1) * cookieFontSize);
+    }
 };
 
 // Basic control variables
@@ -127,44 +187,44 @@ let text = textGroup.append('text')
     .attr('font-weight', 500)
     .attr("text-anchor", "middle");
 
-// After the main holiday message text and before the cookie names
-textGroup.append('text')
-    .attr("class", "box-text")
-    .text("What is in the box?")
-    .style('fill', 'white')
-    .attr('font-weight', 300);
+// Add this before creating the text elements
+let showCookies = getUrlParameter('show_cookies', false);
 
-// Add cookie names
-let cookieNames = getCookieNames();
-cookieNames.forEach((cookie, i) => {
+// Update the cookie-related elements creation
+if (showCookies) {
+    // Create box text
     textGroup.append('text')
-        .attr("class", "cookie-text")
-        .text(cookie)
+        .attr("class", "box-text")
+        .text("What is in the box?")
         .style('fill', 'white')
-        .attr('font-weight', 100);
-});
+        .style("opacity", 0)
+        .attr('font-weight', 300);
 
-// After creating the text elements but before updateTextPosition()
-// Initially hide the box text and cookie text
-textGroup.select(".box-text")
-    .style("opacity", 0);
-textGroup.selectAll(".cookie-text")
-    .style("opacity", 0);
+    // Add cookie names
+    let cookieNames = getCookieNames();
+    cookieNames.forEach((cookie, i) => {
+        textGroup.append('text')
+            .attr("class", "cookie-text")
+            .text(cookie)
+            .style('fill', 'white')
+            .style("opacity", 0)
+            .attr('font-weight', 100);
+    });
 
-// Add this after the main text transition
-// Wait 10 seconds, then fade in the box text and cookies
-setTimeout(() => {
-    textGroup.select(".box-text")
-        .transition()
-        .duration(2000)
-        .style("opacity", 1);
-    
-    textGroup.selectAll(".cookie-text")
-        .transition()
-        .delay((d, i) => i * 500) // Stagger the cookie text appearances
-        .duration(2000)
-        .style("opacity", 1);
-}, 10000);
+    // Update the timeout for cookie text
+    setTimeout(() => {
+        textGroup.select(".box-text")
+            .transition()
+            .duration(2000)
+            .style("opacity", 1);
+        
+        textGroup.selectAll(".cookie-text")
+            .transition()
+            .delay((d, i) => i * 500)
+            .duration(2000)
+            .style("opacity", 1);
+    }, 10000);
+}
 
 // Initial text positioning
 updateTextPosition();
