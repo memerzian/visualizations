@@ -131,9 +131,9 @@ var toSentenceCase = function(str) {
 
 // After the text positioning function, add this helper
 var getCookieNames = function() {
-    let cookies = ['Apple/carrot muffins (gf)', 'Gingerbread cookies', 'Chocolate Chip cookies (gf)'];
+    let cookies = ['Oat and pecan brittle cookie (1)', 'Chewy molasses spice cookies (2)', 'Raspberry almond thumbprint (1, GF, DF)', 'Carrot and Apple muffin (1, GF)', 'Chocolate chip cookie (1, GF)'];
     // Randomly select 3 unique cookies
-    return cookies.sort(() => 0.5 - Math.random()).slice(0, 3);
+    return cookies.sort(() => 0.5 - Math.random()).slice(0, 5);
 };
 
 // Update the text creation section
